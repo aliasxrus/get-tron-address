@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"encoding/hex"
 	"fmt"
 	"get-tron-address/util"
@@ -11,10 +12,18 @@ import (
 	"strings"
 )
 
+//TXUPNSGEssm5rVziockTCjacvLWGKwsqVq
+//Master public key:
+//xpub661MyMwAqRbcErj3DnuAJ5kTVyLpU4t3x93BwZStgaunJwwaYhttNiBPvak3EkJTdhMJCxjifbeiVvARPYWje8cfbsZobhwvqa3aEKMiLDu
+//
+//{"PrivateKey":"CAISIH62lIdicSwIof8Hnc34lI5+n8mETKn2Gedw7R/dg+zy","Mnemonic":"muffin elbow monster regular burger lady thrive virtual curve mammal reflect venue","SkInBase64":"CAISIH62lIdicSwIof8Hnc34lI5+n8mETKn2Gedw7R/dg+zy","SkInHex":"7eb6948762712c08a1ff079dcdf8948e7e9fc9844ca9f619e770ed1fdd83ecf2"}
+//muffin,elbow,monster,regular,burger,lady,thrive,virtual,curve,mammal,reflect,venue
+//04f3dfca1db1edf2a024eb949ed92fe1254e96c50ea5d00a1e8bbf771f56a059f551cb810a1ac6914440b63839b7bceb2ed469be6c3a70acd81fba33bd5b2231e1
+
 func main() {
 	argsWithoutProg := os.Args[1:]
 	if len(argsWithoutProg) == 0 {
-		help()
+		argsWithoutProg = getUserInput()
 	}
 
 	var k string
@@ -94,14 +103,57 @@ func main() {
 		os.Exit(1)
 	}
 	ledgerAddressString := hex.EncodeToString(ledgerAddress)
-	fmt.Println("Speed address:", ledgerAddressString)
-	fmt.Println("\nSuccess!")
+	fmt.Println("SPEED IN-APP WALLET ADDRESS:")
+	fmt.Println(ledgerAddressString)
+
+	f, err := os.OpenFile("SPEED_IN_APP_ADDRESS.txt", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0755)
+	if err != nil {
+		fmt.Println("Err OpenFile:", err)
+	} else {
+		_, err = f.WriteString(ledgerAddressString)
+		if err != nil {
+			fmt.Println("Err write file:", err)
+		}
+	}
+	defer f.Close()
+
+	fmt.Println("\nSuccess!\nPress ENTER to exit! / Нажмите ВВОД для выхода!")
+	fmt.Scanf("%s", "")
+}
+
+func getUserInput() []string {
+	fmt.Println("Enter the private key or 12 words to get the SPEED IN-APP wallet address. / Для получения адреса SPEED IN-APP кошелька введите ключ или 12 слов.")
+	fmt.Println("Examples: / Примеры:")
+	fmt.Println("muffin,elbow,monster,regular,burger,lady,thrive,virtual,curve,mammal,reflect,venue")
+	fmt.Println("7eb6948762712c08a1ff079dcdf8948e7e9fc9844ca9f619e770ed1fdd83ecf2")
+	fmt.Println("CAISIH62lIdicSwIof8Hnc34lI5+n8mETKn2Gedw7R/dg+zy")
+	fmt.Println("Muffin Elbow Monster Regular Burger Lady Thrive Virtual Curve Mammal Reflect Venue")
+	fmt.Println("\nEnter data from the wallet: / Введите данные от кошелька:")
+
+	scanner := bufio.NewScanner(os.Stdin)
+	scanner.Scan()
+	userInput := scanner.Text()
+
+	count := 0
+	for _, ch := range userInput {
+		if ch == ' ' || ch == ',' {
+			count++
+		}
+	}
+
+	if count == 11 {
+		userInput = strings.ToLower(userInput)
+		userInput = strings.ReplaceAll(userInput, " ", ",")
+		return []string{"seed", userInput}
+	}
+
+	return []string{"key", userInput}
 }
 
 func help() {
-	fmt.Println("Example:")
+	fmt.Println("Example / Пример запуска из командной строки:")
 	fmt.Println("address.exe seed muffin,elbow,monster,regular,burger,lady,thrive,virtual,curve,mammal,reflect,venue")
-	fmt.Println("OR")
+	fmt.Println("OR / ИЛИ")
 	fmt.Println("address.exe key 7eb6948762712c08a1ff079dcdf8948e7e9fc9844ca9f619e770ed1fdd83ecf2")
 	os.Exit(1)
 }
